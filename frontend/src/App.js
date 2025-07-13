@@ -1,50 +1,75 @@
-import { useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import "./App.css";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import Menu from "./components/Menu";
+import Game from "./components/Game";
 import axios from "axios";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
 
-const Home = () => {
-  const helloWorldApi = async () => {
-    try {
-      const response = await axios.get(`${API}/`);
-      console.log(response.data.message);
-    } catch (e) {
-      console.error(e, `errored out requesting / api`);
+function App() {
+  const [currentView, setCurrentView] = useState('menu'); // menu, game, leaderboard
+  const [gameResults, setGameResults] = useState(null);
+
+  // Test backend connection
+  useEffect(() => {
+    const testBackend = async () => {
+      try {
+        const response = await axios.get(`${API}/`);
+        console.log('Backend connected:', response.data.message);
+      } catch (e) {
+        console.error('Backend connection failed:', e);
+      }
+    };
+    testBackend();
+  }, []);
+
+  const handleStartGame = () => {
+    setCurrentView('game');
+    setGameResults(null);
+  };
+
+  const handleGameEnd = (results) => {
+    setGameResults(results);
+    setCurrentView('menu');
+  };
+
+  const handleBackToMenu = () => {
+    setCurrentView('menu');
+    setGameResults(null);
+  };
+
+  const handleShowLeaderboard = () => {
+    setCurrentView('leaderboard');
+  };
+
+  const renderCurrentView = () => {
+    switch (currentView) {
+      case 'game':
+        return (
+          <Game 
+            onGameEnd={handleGameEnd}
+            onBackToMenu={handleBackToMenu}
+          />
+        );
+      case 'menu':
+      default:
+        return (
+          <Menu 
+            onStartGame={handleStartGame}
+            onShowLeaderboard={handleShowLeaderboard}
+            gameResults={gameResults}
+          />
+        );
     }
   };
 
-  useEffect(() => {
-    helloWorldApi();
-  }, []);
-
-  return (
-    <div>
-      <header className="App-header">
-        <a
-          className="App-link"
-          href="https://emergent.sh"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <img src="https://avatars.githubusercontent.com/in/1201222?s=120&u=2686cf91179bbafbc7a71bfbc43004cf9ae1acea&v=4" />
-        </a>
-        <p className="mt-5">Building something incredible ~!</p>
-      </header>
-    </div>
-  );
-};
-
-function App() {
   return (
     <div className="App">
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<Home />}>
-            <Route index element={<Home />} />
-          </Route>
+          <Route path="/" element={renderCurrentView()} />
         </Routes>
       </BrowserRouter>
     </div>
